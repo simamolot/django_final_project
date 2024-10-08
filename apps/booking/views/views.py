@@ -4,12 +4,17 @@ from django.shortcuts import render
 # Create your views here.
 
 from django.http import JsonResponse
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.views import Request
+
+from .search_views import ApartmentFilter
 from ..models.apartments import Apartment
 from ..serializers.serializer_apartment import ApartmentSerializer
+from rest_framework.generics import ListAPIView
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class ApartmentCreateView(APIView):
@@ -24,7 +29,13 @@ class ApartmentCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ApartmentListView(APIView):
+class ApartmentListView(generics.ListAPIView):
+    queryset = Apartment.objects.all()
+    serializer_class = ApartmentSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ApartmentFilter
+
+
     def get(self, request, pk=None):
         if pk:
             try:
@@ -34,10 +45,10 @@ class ApartmentListView(APIView):
             except Apartment.DoesNotExist:
                 return Response({"error": "Apartment not found"}, status=404)
         else:
-            apartments = Apartment.objects.filter(is_active=True).values(
-                'title', 'description', 'street', 'house_number', 'amount_of_rooms', 'price', 'type_of_housing'
-                # Исправлено имя поля
+            queryset = self.filter_queryset(self.get_queryset())
+            apartments = queryset.values('title', 'description', 'street', 'house_number', 'amount_of_rooms', 'price', 'type_of_housing'
             )
+
             return JsonResponse(list(apartments), safe=False)
 
 
@@ -73,3 +84,5 @@ class ApartmentChangeActiveView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+

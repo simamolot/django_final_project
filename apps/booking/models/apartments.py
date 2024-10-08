@@ -3,6 +3,7 @@ from django.db import models
 class Apartment(models.Model):
     title = models.CharField(max_length=120, verbose_name='Title of the house')
     description = models.TextField(verbose_name='Room description')
+    city = models.CharField(max_length=150, null=False, default=None, verbose_name='City')
     street = models.CharField(max_length=120, verbose_name='Address')
     house_number = models.CharField(max_length=120, verbose_name='House number')
     amount_of_rooms = models.IntegerField(verbose_name='Count of rooms')
